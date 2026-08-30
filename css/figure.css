@@ -1,0 +1,60 @@
+/* 図の外枠 */
+.figure {
+  margin: 2rem 0 2.4rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--fig-surface);
+  overflow: hidden;
+}
+.figure__canvas { padding: .6rem .4rem .2rem; }
+.figure figcaption {
+  display: block;
+  padding: .9rem 1.1rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-soft);
+  font-size: .86rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+.figure__title { display: block; color: var(--text); font-size: .92rem; margin-bottom: .25rem; }
+.figure__error { padding: 1.5rem; color: var(--fig-danger); font-size: .88rem; }
+
+.figure-svg { display: block; width: 100%; height: auto; }
+
+/* 図の中身。色は tokens.css のトークンから引く */
+.fg-gridline { stroke: var(--fig-grid); stroke-width: 1; }
+.fg-pane { fill: none; stroke: var(--fig-grid); stroke-width: 1; }
+
+.fg-wick { stroke-width: 1.1; }
+.fg-body { stroke-width: 1; }
+.fg-up { stroke: var(--fig-up); fill: var(--fig-up); }
+.fg-down { stroke: var(--fig-down); fill: var(--fig-down); }
+.fg-hist { stroke: none; opacity: .55; }
+
+.fg-plot { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.fg-level { stroke-width: 1.2; }
+.fg-segment { stroke-width: 1.4; fill: none; }
+.fg-arrow { stroke-width: 1.3; }
+
+.fg-dot { stroke: var(--fig-surface); stroke-width: 1.5; }
+.fg-buy { stroke: var(--fig-surface); stroke-width: 1; }
+.fg-sell { stroke: var(--fig-surface); stroke-width: 1; }
+
+text {
+  font-family: var(--font-sans);
+  paint-order: stroke;
+  stroke: var(--fig-surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.fg-axis {
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  fill: var(--fig-muted);
+  stroke-width: 0;
+}
+.fg-note { font-size: 11px; fill: var(--fig-text); }
+.fg-legend { font-size: 10.5px; fill: var(--fig-text); }
+.fg-zonelabel { font-size: 10.5px; fill: var(--fig-text); text-anchor: middle; opacity: .85; }
+.fg-panetitle { font-size: 10.5px; fill: var(--fig-muted); }

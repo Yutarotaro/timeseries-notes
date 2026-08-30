@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>時系列ノート</title>
+<meta name="description" content="時系列データの読み方と指標計算の覚え書き。">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%232f6690'/><path d='M4 11l3-4 2.5 2.5L12 5' stroke='white' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/figure.css">
+<script type="module" src="src/presentation/main.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へskip</a>
+
+<header class="site-header">
+  <div class="site-header__inner">
+    <p class="site-header__title">時系列ノート</p>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="テーマを切り替え">☾</button>
+    <span class="site-header__sub">チャート分析の覚え書き</span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" aria-label="目次">
+    <details class="toc__panel" open>
+      <summary class="toc__heading">目次</summary>
+      <div data-toc></div>
+    </details>
+  </nav>
+
+  <main class="content" id="main">
+    <div class="title-block">
+      <h1>テクニカル分析ノート</h1>
+      <p class="lead">為替チャートの読み方を、指標の定義と一緒に整理したもの。図はすべて、このページのコードがその場で計算して描いている。</p>
+      <p class="meta">最終更新 2026-08-30 ／ 図 24 点 ／ 相場の予測ではなく、道具の説明</p>
+    </div>
+
+    <section id="basics">
+      <h2>テクニカル分析が実際にやっていること</h2>
+      <p>テクニカル分析は「価格の履歴から将来の価格を当てる技術」ではない。やっているのは<strong>過去の値動きを、意思決定できる形に要約すること</strong>だ。移動平均線は直近 N 本の終値の平均でしかないし、RSI は上げ幅と下げ幅の比でしかない。そこに未来の情報は一切入っていない。</p>
+      <p>それでも役に立つのは、要約が判断の手順を固定してくれるからだ。「上位足が上向きで、押し目が支持線で止まったら買う」と決めておけば、同じ場面で同じ判断ができる。再現性のない判断は、勝っても負けても学習できない。</p>
+
+      <h3>前提を 3 つだけ確認しておく</h3>
+      <dl>
+        <dt>価格はすべてを織り込む</dt>
+        <dd>金利差も需給も政治も、最終的には価格に出る。だからチャートだけ見る、という立場。裏を返せば「なぜ動いたか」はチャートからは分からない。</dd>
+        <dt>価格はトレンドを形成する</dt>
+        <dd>ランダムウォークではない部分がある、という賭け。ただし、その部分がどれだけ大きいかは局面によるし、年々小さくなっている。</dd>
+        <dt>歴史は繰り返す</dt>
+        <dd>同じ形が同じ結果を生む、ではなく「参加者の反応パターンが似ている」という程度の話。</dd>
+      </dl>
+
+      <div class="callout callout--note">
+        <span class="callout__label">前置き</span>
+        <p>このページの図はすべて<strong>合成データ</strong>で描かれている。決定論的な乱数で作った作り物で、実際の相場ではない。説明したい形だけを持つチャートが作れるという利点があり、同時に「作った形は必ず見つかる」という限界も示している（<a href="#pitfalls">最後の節</a>）。</p>
+      </div>
+    </section>
+
+    <section id="candlestick">
+      <h2>ローソク足を読む</h2>
+      <p>1 本のローソク足には 4 つの値段（始値・高値・安値・終値）が入っている。この 4 つで「その時間に何が起きたか」を要約する。</p>
+
+      <figure class="figure" data-figure="candle-anatomy"><div class="figure__canvas"></div></figure>
+
+      <p>読むときの順番は決まっている。<strong>まず実体の向きと大きさ、次にヒゲの偏り</strong>だ。実体が大きい足は一方向に押し切られたことを意味し、実体が小さくヒゲが長い足は「行って戻された」ことを意味する。同じ値幅でも、意味は正反対になる。</p>
+
+      <figure class="figure" data-figure="candle-patterns"><div class="figure__canvas"></div></figure>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>包み足（エンガルフィング）</h4>
+          <p>前の足の実体を、逆向きの足が丸ごと包む。前の時間帯の参加者が全員含み損になる形なので、決済の動きが次の足を押しやすい。</p>
+        </div>
+        <div class="card">
+          <h4>ピンバー</h4>
+          <p>片側に長いヒゲ。そこまで伸ばしたのに全部戻された、という記録。長いヒゲの側に注文が待っていた可能性を示す。</p>
+        </div>
+        <div class="card">
+          <h4>はらみ足</h4>
+          <p>前の足の内側に収まる。値幅が縮む＝様子見。方向を示す形ではなく、「次に動く準備」を示す形として扱う。</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="callout__label">注意</span>
+        <p>ローソク足の形は<strong>単体では情報量がほとんどない</strong>。レンジの真ん中で出たピンバーは単なるノイズで、何度も止められている水準で出たピンバーは意味を持つ。形を覚えることより、<a href="#levels">どこで出たか</a>を見る習慣のほうが先に来る。</p>
+      </div>
+    </section>
+
+    <section id="trend">
+      <h2>トレンドの構造 — ダウ理論</h2>
+      <p>「上昇トレンド」は感覚ではなく定義できる。<strong>高値と安値がそろって切り上がっている状態</strong>のことだ。片方だけでは足りない。</p>
+
+      <figure class="figure" data-figure="trend-structure"><div class="figure__canvas"></div></figure>
+
+      <p>この定義の利点は、否定の条件がはっきりすることにある。上昇トレンドは「直近の押し安値を割った時点」で定義を満たさなくなる。天井を当てる必要はなく、前提が崩れたことを確認すればいい。</p>
+
+      <figure class="figure" data-figure="trend-break"><div class="figure__canvas"></div></figure>
+
+      <div class="callout callout--danger">
+        <span class="callout__label">見落としやすい点</span>
+        <p>チャートを後から見ると高値・安値は自明に見えるが、<strong>リアルタイムでは確定が遅れる</strong>。「前後 3 本より高い」という判定は、右側の 3 本が出るまで成立しない。この遅れを入れずにバックテストを組むと、成績が実際より良く出る。このページのコードでは、スイング点に <code>confirmedAt</code>（何本目で確定したか）を持たせている。</p>
+      </div>
+    </section>
+
+    <section id="levels">
+      <h2>水平線とトレンドライン</h2>
+      <p>同じ値段で何度も止まるのは、そこに注文が溜まっているからだ。指値・逆指値・オプションの権利行使価格が集まる場所は、簡単には抜けない。</p>
+
+      <figure class="figure" data-figure="support-resistance"><div class="figure__canvas"></div></figure>
+
+      <p>抜けたあと、その水準は役割を入れ替える。天井として機能していた価格が、今度は床になる（<strong>ロールリバーサル</strong>）。抜けた時点で「そこで買い損ねた人」と「そこで売って損した人」が同じ方向を向くので、押し目で買いが入りやすい。</p>
+
+      <figure class="figure" data-figure="trendline-channel"><div class="figure__canvas"></div></figure>
+
+      <p>斜めの線は水平線より恣意的だ。2 点あれば引けてしまうので、<strong>3 点目で反応して初めて意味を持つ</strong>。角度が急なラインほど早く割れるのは当然で、上げ続けるには毎回それより速く上げる必要があるからだ。</p>
+
+      <figure class="figure" data-figure="round-numbers"><div class="figure__canvas"></div></figure>
+
+      <p>キリのいい数字も同じ理由で効く。テクニカル的な根拠があるのではなく、多くの人が同じ数字を見ているという理由だけで機能する。</p>
+    </section>
+
+    <section id="moving-average">
+      <h2>移動平均線</h2>
+      <p>最も単純で、最もよく使われる。単純移動平均（SMA）は直近 N 本の終値の平均、指数平滑移動平均（EMA）は新しい足に重みを置いた平均だ。</p>
+
+      <div class="table-scroll">
+        <table>
+          <caption>同じ期間でも性格が違う</caption>
+          <thead><tr><th>種類</th><th>定義</th><th>性格</th></tr></thead>
+          <tbody>
+            <tr><td>SMA</td><td>直近 N 本の終値を等しく平均</td><td>反応は遅いが安定。古い足が窓から外れる瞬間に段差が出る</td></tr>
+            <tr><td>EMA</td><td>新しい足ほど重い加重平均（係数 2/(N+1)）</td><td>反応が速い分、騙しも拾う。短期の判断向き</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="figure" data-figure="moving-average"><div class="figure__canvas"></div></figure>
+
+      <p>ゴールデンクロス・デッドクロスは有名だが、<strong>構造的に必ず遅れる</strong>。過去の平均どうしの交差なので、値動きが終わってから知らせが来る。実用的なのは交差そのものより、<strong>並び順（短期＞中期＞長期）と傾き</strong>のほうだ。図で塗ってある区間がそれで、パーフェクトオーダーと呼ばれる。</p>
+
+      <figure class="figure" data-figure="granville"><div class="figure__canvas"></div></figure>
+
+      <p>グランビルの法則のうち実際によく使うのは「上向きの平均線に価格が戻ったところを買う」の 1 つだけだ。<strong>平均線が上を向いていることが前提</strong>で、横ばいの平均線に何度触れてもそれは押し目ではなくレンジの往復にすぎない。</p>
+    </section>
+
+    <section id="macd">
+      <h2>MACD</h2>
+      <p>MACD 線は <strong>EMA12 と EMA26 の差</strong>そのものだ。2 本の平均線が開けば上に伸び、近づけば 0 に戻る。「平均線の距離を数値化したもの」と理解しておくと、何を見ているのか迷わない。</p>
+
+      <figure class="figure" data-figure="macd-basic"><div class="figure__canvas"></div></figure>
+
+      <ul>
+        <li><strong>0 ライン</strong>を上抜ける ＝ 短期平均が長期平均を上回った（ゴールデンクロスと同じ瞬間）</li>
+        <li><strong>シグナル線</strong>は MACD 線の EMA9。交差は MACD の勢いの変化を示す</li>
+        <li><strong>ヒストグラム</strong>は MACD とシグナルの差。差の差なので反応は最も速く、騙しも最も多い</li>
+      </ul>
+
+      <div class="callout">
+        <span class="callout__label">実装上の落とし穴</span>
+        <p>シグナル線は「MACD 線が計算できた区間だけ」で平滑する。詰めた配列で計算したあと元の添字に戻す処理を間違えると、系列全体が数十本ずれる。ずれた指標は<strong>未来の値を参照している</strong>のと同じで、バックテストの成績だけが上がる。このページのコードでは、指標の長さがローソク足と一致することをテストで固定している。</p>
+      </div>
+    </section>
+
+    <section id="oscillator">
+      <h2>RSI とストキャスティクス</h2>
+      <p>どちらも 0〜100 に正規化して「買われすぎ／売られすぎ」を測る。RSI は上げ幅と下げ幅の比、ストキャスティクスは直近レンジの中での終値の位置だ。</p>
+
+      <figure class="figure" data-figure="rsi-divergence"><div class="figure__canvas"></div></figure>
+
+      <p>「70 で売り、30 で買い」は、レンジ相場でしか通用しない。トレンドが出れば RSI は 70 に張り付いたまま何日でも上げ続ける。逆張りの目安として使うより、<strong>ダイバージェンス</strong>を見るほうが情報量が多い。価格は高値を更新したのに指標は更新できていない、という状態は「同じ値幅を出すのに前より力が要っている」ことを意味する。</p>
+      <p>ただしダイバージェンスが言っているのは<strong>勢いが落ちた</strong>までで、反転するとは言っていない。強いトレンドではダイバージェンスが 3 回 4 回と続いたまま伸びることがある。</p>
+
+      <figure class="figure" data-figure="stochastic-range"><div class="figure__canvas"></div></figure>
+
+      <p>ストキャスティクスはレンジ相場に噛み合う。上下が決まっている場面では %K と %D の交差がそのまま往復のタイミングになる。トレンドが出た瞬間に同じ使い方をすると轢かれるので、<strong>使う前に「今どちらの相場か」を判定する手順</strong>が要る。指標そのものはその判定をしてくれない。</p>
+    </section>
+
+    <section id="bollinger">
+      <h2>ボリンジャーバンド</h2>
+      <p>中心線は SMA20、上下の線は標準偏差の 2 倍。つまりバンドの幅は<strong>直近 20 本のばらつきそのもの</strong>で、値動きが静かなら狭く、荒れれば広がる。</p>
+
+      <figure class="figure" data-figure="bollinger-squeeze"><div class="figure__canvas"></div></figure>
+
+      <p>「±2σ に約 95% が収まる」という説明はよく見るが、これは<strong>価格が正規分布に従うと仮定した場合</strong>の話だ。実際の為替は裾が厚く、3σ を超える動きが理論値よりずっと頻繁に起きる。指標発表の瞬間などは、その前提が完全に崩れる。</p>
+      <p>実用的なのは幅の変化のほうだ。狭い状態（スクイーズ）が続いたあとは大きく動きやすい。ただし<strong>どちらに動くかについてバンドは何も言っていない</strong>。バンドウォーク（上限に沿って上げ続ける状態）も、逆張りすれば損切りが並ぶだけの場面になる。</p>
+    </section>
+
+    <section id="ichimoku">
+      <h2>一目均衡表</h2>
+      <p>この指標の本質は<strong>時間をずらして描くこと</strong>にある。先行スパンは 26 本先に、遅行スパンは 26 本前に置かれる。だから雲は常にチャートの右端より先まで描かれている。</p>
+
+      <figure class="figure" data-figure="ichimoku-cloud"><div class="figure__canvas"></div></figure>
+
+      <div class="table-scroll">
+        <table>
+          <caption>5 本の線の定義</caption>
+          <thead><tr><th>線</th><th>定義</th><th>置く位置</th></tr></thead>
+          <tbody>
+            <tr><td>転換線</td><td>過去 9 本の (高値+安値)/2</td><td>その足</td></tr>
+            <tr><td>基準線</td><td>過去 26 本の (高値+安値)/2</td><td>その足</td></tr>
+            <tr><td>先行スパン 1</td><td>(転換線+基準線)/2</td><td>26 本先</td></tr>
+            <tr><td>先行スパン 2</td><td>過去 52 本の (高値+安値)/2</td><td>26 本先</td></tr>
+            <tr><td>遅行スパン</td><td>終値</td><td>26 本前</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>雲が先まで描かれているということは、<strong>この先どこに抵抗帯があるかを先に知れる</strong>ということだ。ただし雲は過去の高安から作られているので、新しい情報が入っているわけではない。</p>
+      <p>三役好転（転換線が基準線を上抜け・価格が雲の上・遅行スパンが当時の価格の上）は、3 つ揃って初めて名乗る。1 つだけ満たした状態を「好転」と呼ばないのがこの指標の作法で、条件を緩めた瞬間に精度は落ちる。</p>
+    </section>
+
+    <section id="fibonacci">
+      <h2>フィボナッチ</h2>
+      <p>上げ幅に対してどこまで戻したかを測る。38.2% / 50% / 61.8% がよく見られる水準だ。</p>
+
+      <figure class="figure" data-figure="fibonacci-retracement"><div class="figure__canvas"></div></figure>
+
+      <p>数字そのものに力があるわけではない。多くの参加者が<strong>同じ起点・終点</strong>で同じ線を引くから機能する。逆に言えば、起点をどこに取るかで線は全部ずれる。図の起点をひとつ隣のスイングに変えれば、すべての水準が動く。</p>
+
+      <div class="callout callout--danger">
+        <span class="callout__label">後付けになりやすい</span>
+        <p>チャートを開いて「よく効いている線」を探すと、必ず見つかる。起点・終点の組み合わせは無数にあるからだ。使うなら<strong>引く場所のルールを先に決める</strong>（直近の明確なスイング、など）。当たった線を後から選ぶのは分析ではない。</p>
+      </div>
+    </section>
+
+    <section id="atr">
+      <h2>ATR — 値幅の物差し</h2>
+      <p>ATR は「1 本あたり平均でどれだけ動くか」を測る。前の足の終値からの窓開けも含めた真の値幅（True Range）の平均だ。方向は一切示さない。</p>
+
+      <figure class="figure" data-figure="atr-stop"><div class="figure__canvas"></div></figure>
+
+      <p>使い道は主にふたつ。<strong>損切り幅の基準</strong>と、<strong>ロットの調整</strong>だ。「常に 10 pips で損切り」を全局面で使うと、荒れている日はノイズで刈られ、静かな日は損失が大きすぎる。ATR × 1.5 のような決め方にすると幅が自動で伸縮し、結果としてロットも自動的に調整される。</p>
+    </section>
+
+    <section id="patterns">
+      <h2>チャートパターン</h2>
+      <p>パターンは「スイング点の並び」として定義できるものだけを扱うといい。目で見て似ている、を持ち込むと後から何とでも言えてしまう。</p>
+
+      <figure class="figure" data-figure="double-top"><div class="figure__canvas"></div></figure>
+      <p>ダブルトップは、2 つ目の山で高値を更新できず、間の谷（ネックライン）を割って完成する。<strong>山が 2 つあるだけでは何も起きていない</strong>。目標値幅は山の高さぶんを下に投影したものが目安だが、これは経験則であって根拠のある予測ではない。</p>
+
+      <figure class="figure" data-figure="head-shoulders"><div class="figure__canvas"></div></figure>
+      <p>ヘッドアンドショルダーで大事なのは左右の肩の高さが揃っていることではなく、<strong>頭を超えられないままネックラインを割った</strong>という順序のほうだ。</p>
+
+      <figure class="figure" data-figure="triangle"><div class="figure__canvas"></div></figure>
+      <p>三角保ち合いは高値が切り下がり安値が切り上がる形で、どちらの側も決め手を欠いている状態を示す。値幅が尽きたところで抜けた方向に伸びやすいが、<strong>抜けたと見せて戻す</strong>動きも同じくらい多い。</p>
+    </section>
+
+    <section id="mtf">
+      <h2>マルチタイムフレーム</h2>
+      <p>同じ値動きでも、見る解像度で結論が変わる。下の 2 枚は<strong>まったく同じデータ</strong>で、上は 15 分足、下はそれを 4 時間足に束ねたものだ。</p>
+
+      <figure class="figure" data-figure="mtf-lower"><div class="figure__canvas"></div></figure>
+      <figure class="figure" data-figure="mtf-higher"><div class="figure__canvas"></div></figure>
+
+      <p>下位足で何度も方向が変わって見えたものが、上位足では 1 本の陽線のヒゲに畳み込まれる。「上位足の方向に逆らわない」というのは、この畳み込みの向きに従うということだ。</p>
+      <p>実務的な手順としては、上位足で方向とおおまかな水準を決め、下位足でタイミングだけ計る。逆順にすると、下位足のノイズごとに結論が変わって一貫性がなくなる。</p>
+
+      <div class="callout callout--note">
+        <span class="callout__label">実装メモ</span>
+        <p>上の図は別々のデータではなく、15 分足の系列を <code>aggregateTo(H4)</code> で束ねて描いている。束ねるときは <strong>始値＝最初の足の始値、終値＝最後の足の終値、高値／安値＝期間中の最大／最小</strong>。端数の足は捨てる（未確定の足を確定足と混ぜないため）。</p>
+      </div>
+    </section>
+
+    <section id="fx-specific">
+      <h2>FX 固有の事情</h2>
+      <p>株と違い、為替は 24 時間動き、板の中心が地理的に移動する。テクニカルの前提が時間帯で変わるということでもある。</p>
+
+      <figure class="figure" data-figure="session-range"><div class="figure__canvas"></div></figure>
+
+      <div class="table-scroll">
+        <table>
+          <caption>主なセッション（日本時間・冬時間基準）</caption>
+          <thead><tr><th>時間帯</th><th>時刻</th><th>性格</th></tr></thead>
+          <tbody>
+            <tr><td>東京</td><td class="num">08:00–15:00</td><td>値幅が出にくい。9:55 の仲値決定に向けた実需の動きが出やすい</td></tr>
+            <tr><td>ロンドン</td><td class="num">17:00–翌 02:00</td><td>参加者が最も多く、東京時間のレンジを抜けにいく動きが出る</td></tr>
+            <tr><td>ニューヨーク</td><td class="num">22:00–翌 07:00</td><td>米指標の発表が集中。ロンドンと重なる 22–02 時が最も動く</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>スプレッド</h4>
+          <p>売値と買値の差＝実質的な取引コスト。往復で必ず払う。5 pips を狙う手法では 0.5 pips のスプレッドが利益の 10% を持っていく。early morning と指標発表前後は広がる。</p>
+        </div>
+        <div class="card">
+          <h4>スワップポイント</h4>
+          <p>2 通貨の金利差から生じる日々の受け払い。デイトレでは無視できるが、数週間持つなら方向次第で損益に効く。水曜のロールオーバーは 3 日分。</p>
+        </div>
+        <div class="card">
+          <h4>経済指標</h4>
+          <p>米雇用統計・CPI・FOMC の瞬間はテクニカルが機能しない。数十 pips を一瞬で飛ぶので、指値も逆指値も想定価格で約定しない（スリッページ）。</p>
+        </div>
+        <div class="card">
+          <h4>週明けの窓</h4>
+          <p>週末に材料が出ると月曜の始値が飛ぶ。損切り注文は窓の下では機能せず、次に付いた値段で約定する。ポジションを持ち越すならこの分のリスクを見ておく。</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="callout__label">レバレッジについて</span>
+        <p>国内 FX の個人口座は最大 25 倍。レバレッジ自体は「証拠金の効率」の話でしかなく、危険なのは倍率ではなく<strong>1 回のトレードで失う金額</strong>のほう。同じ 25 倍でも、損切り幅を 1/5 にすれば損失は 1/5 になる。次の節の計算がそのまま答えになる。</p>
+      </div>
+    </section>
+
+    <section id="risk">
+      <h2>リスク管理 — ここだけは計算できる</h2>
+      <p>相場の予測は当たらないが、<strong>失う額は自分で決められる</strong>。テクニカル分析の話の中で唯一、確実にコントロールできる部分がここだ。</p>
+
+      <figure class="figure" data-figure="risk-reward"><div class="figure__canvas"></div></figure>
+
+      <p>建てる前に決めるのは 3 つ。エントリー、損切り、利確。この 3 つが揃って初めて計画で、含み損が出てから損切りを動かすのは計画の変更ではなく別のトレードだ。</p>
+
+      <h3>ロットは損切り幅から逆算する</h3>
+      <p>順番が大事で、「いくら買うか」から始めてはいけない。</p>
+      <ol>
+        <li>口座残高に対して 1 回で許容する損失を決める（例: 1%）</li>
+        <li>チャートから損切り位置を決める（例: 直近安値の少し下 ＝ 20 pips）</li>
+        <li>許容損失 ÷ 損切り幅 ＝ ロット数</li>
+      </ol>
+      <p>残高 100 万円・リスク 1% なら許容損失は 1 万円。損切り 20 pips で 1 pip あたり 1,000 円/ロットなら、20,000 円/ロット。したがって <code>10,000 ÷ 20,000 = 0.5 ロット</code>。損切りが 40 pips 必要な場面なら自動的に 0.25 ロットに減る。</p>
+
+      <h3>勝率とリスクリワードはセットでしか意味がない</h3>
+      <div class="table-scroll">
+        <table>
+          <caption>損益がゼロになる勝率 ＝ 1 / (1 + リスクリワード比)</caption>
+          <thead><tr><th>リスクリワード比</th><th>必要な勝率</th><th>勝率 50% のときの期待値（リスク 1 単位あたり）</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.5</td><td class="num">66.7%</td><td class="num">−0.25</td></tr>
+            <tr><td class="num">1.0</td><td class="num">50.0%</td><td class="num">0.00</td></tr>
+            <tr><td class="num">1.5</td><td class="num">40.0%</td><td class="num">+0.25</td></tr>
+            <tr><td class="num">2.0</td><td class="num">33.3%</td><td class="num">+0.50</td></tr>
+            <tr><td class="num">3.0</td><td class="num">25.0%</td><td class="num">+1.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>勝率 70% でもリスクリワード 0.3 なら負ける（<code>0.7 × 0.3 − 0.3 × 1 = −0.09</code>）。「よく当たる手法」と「儲かる手法」は別物だ。</p>
+
+      <h3>連敗は必ず来る</h3>
+      <div class="table-scroll">
+        <table>
+          <caption>1 回のリスク別・連敗したときの資金の減り方</caption>
+          <thead><tr><th>1 回のリスク</th><th>5 連敗</th><th>10 連敗</th><th>20 連敗</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1%</td><td class="num">−4.9%</td><td class="num">−9.6%</td><td class="num">−18.2%</td></tr>
+            <tr><td class="num">2%</td><td class="num">−9.6%</td><td class="num">−18.3%</td><td class="num">−33.2%</td></tr>
+            <tr><td class="num">5%</td><td class="num">−22.6%</td><td class="num">−40.1%</td><td class="num">−64.2%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>勝率 50% の手法でも 10 連敗する確率は約 0.1% で、1000 回トレードすれば起きる。5% リスクだと 10 連敗で資金が 4 割減り、元に戻すには 67% の利益が要る。<strong>減った資金を取り戻すのは、減らすより常に難しい</strong>。</p>
+    </section>
+
+    <section id="pitfalls">
+      <h2>テクニカルの限界</h2>
+      <p>最後に、この文章全体に対する反証を置いておく。次のチャートは<strong>乱数だけで作られている</strong>。未来の情報どころか、意味のある構造すら入っていない。</p>
+
+      <figure class="figure" data-figure="overfit-warning"><div class="figure__canvas"></div></figure>
+
+      <p>それでも支持線も抵抗線もトレンドラインも引けるし、「効いている」ように見える。人間はランダムな系列にパターンを見出すようにできているので、これは避けられない。</p>
+
+      <h3>対策になるもの</h3>
+      <ul>
+        <li><strong>ルールを先に書く。</strong> チャートを見てから条件を決めると、必ず当てはまる条件が見つかる。</li>
+        <li><strong>別の期間・別の通貨ペアで確かめる。</strong> 同じ手法が別のデータで成立しないなら、それは相場の性質ではなくそのデータの偶然。</li>
+        <li><strong>取引コストを引く。</strong> スプレッドとスワップを入れた瞬間に消える優位性は多い。</li>
+        <li><strong>指標のパラメータをいじりすぎない。</strong> 「RSI を 14 から 13 にしたら成績が上がった」は、ほぼ確実に過剰適合。</li>
+      </ul>
+
+      <div class="callout callout--danger">
+        <span class="callout__label">よくあるリーク</span>
+        <p>検証コードを書くなら、次の 3 か所を疑う。<strong>①分割</strong>: 時系列を無作為に分割すると、未来のデータで学習して過去を当てることになる。<strong>②特徴量</strong>: 中心化移動平均や、その足の終値を含めて計算した値を、その足の判断に使っていないか。<strong>③スケーリング</strong>: 標準化の平均・分散を全期間から計算すると、そこに未来が混ざる。バックテストの成績が実運用と乖離する原因はたいていこの 3 つのどれかで、指標の選び方ではない。</p>
+      </div>
+
+      <p>テクニカル分析でできるのは、判断の手順を固定して、失う額を管理し、同じ場面で同じ行動を取れるようにすることまでだ。それ以上を期待すると、必ずどこかで説明のつかない損失に出会う。</p>
+    </section>
+
+    <section id="architecture">
+      <h2>このページの作り</h2>
+      <p>図はすべて実行時に計算して描いている。画像は 1 枚も使っていない。指標の定義を変えれば図もキャプションの数字も一緒に変わる、という状態を保つために、コードは<strong>依存の向きが内側だけを向く</strong>ように分けてある。</p>
+
+      <pre class="tree"><code>src/
+├── domain/            外部に一切依存しない。相場の言葉だけで書かれた層
+│   ├── model/         Instrument, TimeFrame, Candle, CandleSeries, PriceLevel
+│   ├── indicator/     MovingAverage, Macd, Oscillator, Volatility, Ichimoku
+│   ├── analysis/      SwingDetector, Fibonacci, ChartPattern
+│   └── risk/          RiskParameters, TradePlan, PositionSizer, Expectancy
+├── application/       ユースケースと、外界との契約
+│   ├── ports/         CandleSeriesRepository, FigureRenderer（インタフェース）
+│   ├── figure/        FigureSpec, FigureCatalog, RenderFigure
+│   └── scenarios/     どの図に何を描くかの定義
+├── infrastructure/    ポートの実装（差し替え可能な部分）
+│   ├── data/          SyntheticCandleSeriesRepository（合成データ）
+│   └── rendering/     SvgFigureRenderer（SVG での描画）
+└── presentation/      DOM を触る層
+    ├── FigureMount, TableOfContents, ThemeController
+    └── main.js        合成ルート — ここだけが実装を選んで結線する</code></pre>
+
+      <h3>依存の向き</h3>
+      <p>矢印は「知っている」方向。<code>domain</code> は何も知らず、<code>infrastructure</code> は <code>application</code> が定義したインタフェースを実装する側に回る（依存性逆転）。</p>
+      <pre class="tree"><code>presentation ──▶ application ──▶ domain
+                      ▲                ▲
+                      │                │
+                infrastructure ────────┘
+                (ports の実装として、内側に従う)</code></pre>
+
+      <h3>この分け方で実際に得しているところ</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h4>ブラウザなしで検証できる</h4>
+          <p><code>domain</code> と <code>application</code> は DOM を知らないので、Node だけで指標の計算と全 24 図の組み立てを検証できる。<code>node scripts/check.mjs</code> がそれで、「指標の長さがローソク足と一致すること」もここで固定している。</p>
+        </div>
+        <div class="card">
+          <h4>データの出どころを交換できる</h4>
+          <p>図は <code>CandleSeriesRepository</code> という形しか知らない。合成データを実データの CSV に差し替えても、変わるのは <code>infrastructure/data</code> の 1 ファイルだけで、図の定義は書き換えなくていい。</p>
+        </div>
+        <div class="card">
+          <h4>ドメインの言葉が残る</h4>
+          <p>「実体」「上ヒゲ」「押し安値」「損益分岐勝率」がそのままメソッド名になっている。<code>candle.engulfs(previous)</code> は包み足の定義そのもので、判定条件が本文と図の 2 か所に散らばらない。</p>
+        </div>
+        <div class="card">
+          <h4>色とテーマが漏れてこない</h4>
+          <p>図の仕様が持つのは <code>'accent'</code> のような意味の名前だけで、実際の色は CSS 変数にある。だから明暗の切り替えでチャートを描き直す必要がない。</p>
+        </div>
+      </div>
+
+      <h3>やりすぎている部分</h3>
+      <p>正直に書くと、静的な解説ページ 1 枚に対してこの分割は過剰だ。<code>Instrument</code> を値オブジェクトにする実利は、通貨ペアが 3 つしかない今の状態ではほとんどない。この構成が効いてくるのは、実データを入れてバックテストを回し始めたとき——つまり<strong>指標の添字が 1 本ずれているだけで結論が変わる</strong>ようになってからで、今はその練習の形をしている。</p>
+
+      <div class="callout callout--note">
+        <span class="callout__label">動かし方</span>
+        <p>ES Modules を使っているので <code>file://</code> では動かない。ローカルで見るときは <code>python3 -m http.server 8080</code> のような静的サーバー越しに開く。ビルド手順・依存パッケージはなし。</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <p>図はすべて合成データによる作例で、実際の相場データではない。特定の売買を推奨するものでもない。取引の判断と結果は各自の責任で。</p>
+  </div>
+</footer>
+
+</body>
+</html>

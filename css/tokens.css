@@ -1,0 +1,94 @@
+/*
+ * 配色とタイポグラフィのトークン。
+ * 図の色もここに置く（SvgFigureRenderer は var(--fig-*) を参照するだけ）。
+ * 明暗の切り替えでチャートを描き直さずに済むのはこのため。
+ */
+:root {
+  color-scheme: light;
+
+  --bg: #fbfaf7;
+  --bg-soft: #f4f2ed;
+  --surface: #ffffff;
+  --border: #e3ded3;
+  --border-strong: #cfc8b8;
+  --text: #1d1c1a;
+  --text-muted: #6a655c;
+  --link: #2f6690;
+  --accent-soft: #eef3f7;
+
+  --fig-up: #2f8f5b;
+  --fig-down: #c34a3d;
+  --fig-accent: #2f6690;
+  --fig-accent-2: #a8761f;
+  --fig-accent-3: #7a63b5;
+  --fig-warn: #b06a10;
+  --fig-danger: #c0392b;
+  --fig-level: #8a7a5c;
+  --fig-muted: #9b968c;
+  --fig-text: #45403a;
+  --fig-grid: #e8e3d9;
+  --fig-surface: #ffffff;
+
+  --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", "Menlo", monospace;
+
+  --measure: 34rem;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(28, 26, 22, .05), 0 8px 24px -16px rgba(28, 26, 22, .28);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #14161a;
+  --bg-soft: #191c21;
+  --surface: #1c1f25;
+  --border: #2a2e36;
+  --border-strong: #3a4049;
+  --text: #e4e1db;
+  --text-muted: #9a958c;
+  --link: #79b0e0;
+  --accent-soft: #1e262f;
+
+  --fig-up: #3fb27a;
+  --fig-down: #e2685c;
+  --fig-accent: #6fa8dc;
+  --fig-accent-2: #d8a548;
+  --fig-accent-3: #a08ee0;
+  --fig-warn: #d99b45;
+  --fig-danger: #e2685c;
+  --fig-level: #b39f77;
+  --fig-muted: #7c8189;
+  --fig-text: #b9b4ac;
+  --fig-grid: #262a31;
+  --fig-surface: #1c1f25;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #14161a;
+    --bg-soft: #191c21;
+    --surface: #1c1f25;
+    --border: #2a2e36;
+    --border-strong: #3a4049;
+    --text: #e4e1db;
+    --text-muted: #9a958c;
+    --link: #79b0e0;
+    --accent-soft: #1e262f;
+
+    --fig-up: #3fb27a;
+    --fig-down: #e2685c;
+    --fig-accent: #6fa8dc;
+    --fig-accent-2: #d8a548;
+    --fig-accent-3: #a08ee0;
+    --fig-warn: #d99b45;
+    --fig-danger: #e2685c;
+    --fig-level: #b39f77;
+    --fig-muted: #7c8189;
+    --fig-text: #b9b4ac;
+    --fig-grid: #262a31;
+    --fig-surface: #1c1f25;
+  }
+}

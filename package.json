@@ -1,0 +1,11 @@
+{
+  "name": "timeseries-notes",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "時系列データの可視化と指標計算のノート",
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "serve": "python3 -m http.server 8080"
+  }
+}
