@@ -64,10 +64,14 @@ export class SyntheticCandleSeriesRepository extends CandleSeriesRepository {
       const open = previousClose ?? base[i] + rnd.centered() * noise * 0.5;
       const top = Math.max(open, close);
       const bottom = Math.min(open, close);
+      const high = top + rnd.next() * noise * wick;
+      const low = bottom - rnd.next() * noise * wick;
+      // 出来高は値幅に連動させる（動いた足ほど約定回数が多い、という実際の傾向）。
+      // 単位のない相対値なので、平均が 1000 前後になるよう適当に伸ばしている。
+      const activity = (high - low) / noise;
       rows.push({
-        o: open, c: close,
-        h: top + rnd.next() * noise * wick,
-        l: bottom - rnd.next() * noise * wick
+        o: open, c: close, h: high, l: low,
+        v: Math.round(400 + activity * 500 + rnd.next() * 300)
       });
       previousClose = close;
     }
@@ -79,7 +83,8 @@ export class SyntheticCandleSeriesRepository extends CandleSeriesRepository {
       if (!row) throw new RangeError(`patch: 範囲外の index (${p.index})`);
       rows[p.index] = {
         o: p.open ?? row.o, c: p.close ?? row.c,
-        h: p.high ?? row.h, l: p.low ?? row.l
+        h: p.high ?? row.h, l: p.low ?? row.l,
+        v: p.volume ?? row.v
       };
     });
 

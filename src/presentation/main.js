@@ -25,7 +25,7 @@ function bootstrap() {
   // 目次の入れ物ではなく nav 全体を渡す（開閉のための details を含むため）
   const tocHost = document.querySelector('[data-toc]');
   const nav = tocHost?.closest('.toc') ?? tocHost;
-  if (nav) new TableOfContents(nav).build([...document.querySelectorAll('main section[id]')]);
+  if (nav) new TableOfContents(nav).build([...document.querySelectorAll('main > section.part')]);
 
   new ThemeController(document.querySelector('[data-theme-toggle]')).start();
 

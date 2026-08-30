@@ -152,7 +152,9 @@ test('登録された全部の図が例外なく組み立てられる', () => {
   const catalog = new FigureCatalog().registerAll(ALL_FIGURES);
   catalog.ids().forEach((id) => {
     const spec = catalog.build(id, { repository });
-    assert.ok(spec.layers.length > 0 || spec.panes.length > 0, `${id} に描くものがない`);
+    // 価格そのものだけを見せる図（チャート形式の比較など）は
+    // レイヤもペインも持たない。系列があれば描くものはある。
+    assert.ok(spec.series || spec.layers.length > 0 || spec.panes.length > 0, `${id} に描くものがない`);
     assert.ok(spec.title, `${id} に見出しがない`);
     spec.layers.forEach((layer) => {
       assert.ok(layer.type, `${id} に型のないレイヤがある`);

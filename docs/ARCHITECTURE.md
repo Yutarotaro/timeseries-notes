@@ -41,8 +41,8 @@ DOM も、描画も、データの出どころも知らない。
 | ディレクトリ | 置くもの |
 | --- | --- |
 | `model/` | `Instrument` `TimeFrame` `Candle` `CandleSeries` `PriceLevel` |
-| `indicator/` | `MovingAverage` `Macd` `Oscillator` `Volatility` `Ichimoku` |
-| `analysis/` | `SwingDetector` `Fibonacci` `ChartPattern` |
+| `indicator/` | `MovingAverage` `Macd` `Oscillator` `Volatility` `Ichimoku` `Directional` `Parabolic` `Momentum` `Vwap` |
+| `analysis/` | `SwingDetector` `Fibonacci` `ChartPattern` `Pivot` `CurrencyStrength` |
 | `risk/` | `RiskParameters` `TradePlan` `PositionSizer` `Expectancy` |
 
 決まりごと:
@@ -105,7 +105,14 @@ node scripts/check.mjs
 
 1. 計算が定義どおりか（SMA の値、RSI の範囲、リスクリワードと損益分岐勝率の整合）
 2. 添字がずれていないか（指標の長さ、先行スパンの位置、遅行スパンの位置）
-3. 全部の図が例外なく組み立てられるか
+3. 全部の図（39 点）が例外なく組み立てられるか
+
+### ドメインに置かなかったもの
+
+エリオット波動の波の判定は実装していない。数え方が一意に決まらず、
+「当てはまるように数え直す」ことがいくらでもできるため、
+自動判定を書くと恣意性がコードの中に隠れてしまう。
+図では検出したスイングに人手でラベルを振り、その旨を本文に書いている。
 
 ## この分割の限界
 
