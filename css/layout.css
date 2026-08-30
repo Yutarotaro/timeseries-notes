@@ -26,15 +26,19 @@
   margin-left: auto;
 }
 .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--border-strong);
   background: var(--surface);
-  color: var(--text);
+  color: var(--text-muted);
   border-radius: 999px;
   width: 2rem; height: 2rem;
-  font-size: .9rem;
+  padding: 0;
   cursor: pointer;
   line-height: 1;
 }
+.theme-toggle:hover { color: var(--text); }
 .theme-toggle:hover { background: var(--bg-soft); }
 
 .layout {
