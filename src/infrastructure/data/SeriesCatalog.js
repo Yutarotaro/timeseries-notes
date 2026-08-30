@@ -114,6 +114,62 @@ export const SERIES_SPECS = {
     anchors: [[0, 150.0], [28, 150.18], [40, 149.92], [56, 150.6], [76, 150.35], [92, 151.3], [110, 151.0]],
     volatility: 0.09
   },
+  'pivot': {
+    // 1 日 = 24 本になるよう区切る。前日レンジから当日のピボットを引くため
+    instrument: Instrument.USDJPY, timeFrame: TimeFrame.H1, seed: 301,
+    anchors: [[0, 150.0], [8, 150.62], [16, 150.08], [23, 150.35],
+              [32, 151.15], [40, 150.72], [47, 151.02],
+              [56, 151.75], [64, 151.30], [71, 151.60]],
+    volatility: 0.08
+  },
+  'elliott': {
+    instrument: Instrument.USDJPY, timeFrame: TimeFrame.H4, seed: 311,
+    // 推進 1-2-3-4-5 のあと調整 A-B-C。波 3 が最長、波 4 は波 1 の高値を割らない
+    anchors: [[0, 145.0], [12, 148.2], [22, 146.6], [46, 153.4], [58, 151.2],
+              [76, 156.0], [88, 152.0], [98, 154.4], [116, 149.8], [128, 151.2]],
+    volatility: 0.07
+  },
+  'dmi': {
+    instrument: Instrument.USDJPY, timeFrame: TimeFrame.H1, seed: 321,
+    // レンジ → 強い上昇 → レンジ。ADX の上下と局面を対応させる
+    anchors: [[0, 149.0], [12, 149.35], [24, 148.85], [38, 149.2],
+              [58, 151.4], [78, 153.6], [92, 153.2], [106, 153.7], [120, 153.3]],
+    volatility: 0.09
+  },
+  'parabolic': {
+    instrument: Instrument.EURUSD, timeFrame: TimeFrame.H1, seed: 331,
+    anchors: [[0, 1.0800], [34, 1.0930], [50, 1.0905], [78, 1.0790],
+              [92, 1.0812], [96, 1.0798], [120, 1.0895]],
+    volatility: 0.08
+  },
+  'hidden-divergence': {
+    instrument: Instrument.USDJPY, timeFrame: TimeFrame.H1, seed: 341,
+    // 2 回目の押しは浅い（安値切り上げ）が、下げ足が速いので指標は深く沈む
+    anchors: [[0, 150.0], [20, 152.0], [32, 151.2], [50, 153.8], [56, 152.6], [80, 155.4]],
+    volatility: 0.07
+  },
+  'volume-spike': {
+    instrument: Instrument.USDJPY, timeFrame: TimeFrame.M15, seed: 351,
+    anchors: [[0, 150.0], [30, 150.28], [50, 149.92], [62, 150.18], [70, 151.55], [90, 152.30]],
+    volatility: 0.09
+  },
+  'oscillator-compare': {
+    instrument: Instrument.USDJPY, timeFrame: TimeFrame.H1, seed: 361,
+    anchors: [[0, 148.0], [22, 150.4], [36, 149.6], [58, 152.2], [72, 151.0], [96, 153.4]],
+    volatility: 0.08
+  },
+  'strength-usdjpy': {
+    instrument: Instrument.USDJPY, timeFrame: TimeFrame.H1, seed: 371,
+    anchors: [[0, 149.0], [26, 150.2], [48, 149.8], [79, 152.4]], volatility: 0.09
+  },
+  'strength-eurusd': {
+    instrument: Instrument.EURUSD, timeFrame: TimeFrame.H1, seed: 372,
+    anchors: [[0, 1.0920], [26, 1.0870], [48, 1.0895], [79, 1.0790]], volatility: 0.09
+  },
+  'strength-gbpjpy': {
+    instrument: Instrument.GBPJPY, timeFrame: TimeFrame.H1, seed: 373,
+    anchors: [[0, 188.0], [26, 189.6], [48, 189.0], [79, 192.8]], volatility: 0.09
+  },
   'overfit-warning': {
     instrument: Instrument.USDJPY, timeFrame: TimeFrame.H1, seed: 999,
     anchors: [[0, 150.0], [30, 150.4], [60, 149.7], [90, 150.5], [120, 150.1]],
@@ -134,6 +190,13 @@ export const SERIES_PATCHES = {
     { index: 15, open: 145.62, close: 145.76, high: 145.82, low: 145.58 },
     // 19 本目: 上ヒゲピンバー
     { index: 19, open: 146.30, close: 146.24, high: 146.62, low: 146.18 }
+  ],
+  'volume-spike': [
+    // ブレイクの数本だけ出来高を跳ねさせる（値幅からの推定では出ない大きさ）
+    { index: 63, volume: 2600 },
+    { index: 64, volume: 4200 },
+    { index: 65, volume: 3800 },
+    { index: 66, volume: 3100 }
   ],
   'candle-anatomy': [
     // 解説用に、実体・上ヒゲ・下ヒゲがどれも読める大きさの足を 1 本置く

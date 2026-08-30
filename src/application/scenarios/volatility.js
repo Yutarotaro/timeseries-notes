@@ -15,7 +15,7 @@ export const volatilityFigures = {
       .height(250)
       .band(band.upper, band.lower, { fill: 'accent', opacity: 0.1 })
       .line(band.upper, { color: 'accent', dash: '4 3' })
-      .line(band.lower, { color: 'accent', dash: '4 3' })
+      .line(band.lower, { color: 'accent', dash: '4 3', label: null })
       .line(band.middle, { color: 'accent2', label: 'SMA20' });
 
     // バンド幅が細い区間＝スクイーズを機械的に拾う。

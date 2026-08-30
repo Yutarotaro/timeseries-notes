@@ -31,6 +31,20 @@ export const Volatility = {
     };
   },
 
+  /**
+   * エンベロープ。移動平均から一定の％だけ離した線。
+   * ボリンジャーと形は似ているが、幅がばらつきに連動しない点が決定的に違う。
+   * 「いつも同じ％だけ離れている」ので、静かな相場では遠すぎ、荒れた相場では近すぎる。
+   */
+  envelope(values, { period = 25, percent = 1 } = {}) {
+    const middle = MovingAverage.simple(values, period);
+    const shift = (sign) => new IndicatorSeries(
+      `${sign > 0 ? '+' : '-'}${percent}%`,
+      middle.values.map((v) => (v == null ? null : v * (1 + (sign * percent) / 100)))
+    );
+    return { middle, upper: shift(1), lower: shift(-1) };
+  },
+
   /** 真の値幅（前日終値からの窓開けを含む）。 */
   trueRange(series) {
     const c = series.candles;

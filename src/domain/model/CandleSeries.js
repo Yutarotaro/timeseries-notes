@@ -24,7 +24,8 @@ export class CandleSeries {
 
   static fromOhlc(instrument, timeFrame, rows) {
     return new CandleSeries(instrument, timeFrame, rows.map((r, i) => new Candle({
-      open: r.o ?? r.open, high: r.h ?? r.high, low: r.l ?? r.low, close: r.c ?? r.close, index: i
+      open: r.o ?? r.open, high: r.h ?? r.high, low: r.l ?? r.low, close: r.c ?? r.close,
+      volume: r.v ?? r.volume ?? null, index: i
     })));
   }
 
@@ -40,7 +41,9 @@ export class CandleSeries {
   closes() { return this.#candles.map((c) => c.close); }
   highs() { return this.#candles.map((c) => c.high); }
   lows() { return this.#candles.map((c) => c.low); }
-  typicalPrices() { return this.#candles.map((c) => (c.high + c.low + c.close) / 3); }
+  typicalPrices() { return this.#candles.map((c) => c.typicalPrice); }
+  volumes() { return this.#candles.map((c) => c.volume); }
+  hasVolume() { return this.#candles.every((c) => c.volume != null); }
 
   highest() { return Math.max(...this.highs()); }
   lowest() { return Math.min(...this.lows()); }
@@ -61,11 +64,14 @@ export class CandleSeries {
     const out = [];
     for (let i = 0; i + size <= this.#candles.length; i += size) {
       const chunk = this.#candles.slice(i, i + size);
+      const volumes = chunk.map((c) => c.volume);
       out.push(new Candle({
         open: chunk[0].open,
         high: Math.max(...chunk.map((c) => c.high)),
         low: Math.min(...chunk.map((c) => c.low)),
         close: chunk[chunk.length - 1].close,
+        // 出来高は足し合わせる。1 本でも欠けていれば合計は意味を持たないので null。
+        volume: volumes.every((v) => v != null) ? volumes.reduce((a, b) => a + b, 0) : null,
         index: out.length
       }));
     }

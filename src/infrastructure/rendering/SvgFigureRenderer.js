@@ -68,7 +68,7 @@ export class SvgFigureRenderer extends FigureRenderer {
     const ctx = { x, y, step, barWidth, left, right, priceTop, priceHeight };
     this.#drawGrid(groups, spec, { left, right, y, low, high, digits });
     this.#drawLayers(groups, spec, ctx);
-    this.#drawCandles(groups, candles, { x, y, barWidth });
+    this.#drawPrice(groups, candles, { x, y, barWidth, style: spec.priceStyle });
     this.#drawLayers(groups, spec, ctx, true);
     if (legend.length) this.#drawLegend(groups, legend, { left, top: PAD_TOP + 4 });
 
@@ -130,13 +130,39 @@ export class SvgFigureRenderer extends FigureRenderer {
     }
   }
 
-  #drawCandles(groups, candles, { x, y, barWidth }) {
+  #drawPrice(groups, candles, { x, y, barWidth, style }) {
+    if (style === 'line') {
+      // 終値だけの折れ線。ヒゲも実体も落ちるので、往復した跡は残らない
+      const d = this.#linePath(candles.map((c) => c.close), x, y);
+      if (d) {
+        groups.candle.appendChild(svg('path', {
+          d, class: 'fg-plot', style: 'stroke:var(--fig-accent)'
+        }));
+      }
+      return;
+    }
+
     candles.forEach((candle, i) => {
       const cls = candle.close >= candle.open ? 'fg-up' : 'fg-down';
       const cx = x(i);
       groups.candle.appendChild(svg('line', {
         x1: cx, y1: y.map(candle.high), x2: cx, y2: y.map(candle.low), class: `fg-wick ${cls}`
       }));
+
+      if (style === 'bar') {
+        // 欧米式のバー。左のヒゲが始値、右のヒゲが終値
+        const arm = Math.max(2, barWidth / 2);
+        groups.candle.appendChild(svg('line', {
+          x1: cx - arm, y1: y.map(candle.open), x2: cx, y2: y.map(candle.open),
+          class: `fg-wick ${cls}`
+        }));
+        groups.candle.appendChild(svg('line', {
+          x1: cx, y1: y.map(candle.close), x2: cx + arm, y2: y.map(candle.close),
+          class: `fg-wick ${cls}`
+        }));
+        return;
+      }
+
       const top = y.map(candle.bodyTop);
       const bottom = y.map(candle.bodyBottom);
       groups.candle.appendChild(svg('rect', {
@@ -254,7 +280,6 @@ export class SvgFigureRenderer extends FigureRenderer {
   }
 
   #drawPane(groups, pane, { x, barWidth, left, right, top, axis }) {
-    const color = (token) => COLOR_TOKENS[token] ?? token;
     const height = pane.height ?? 84;
     let low = Infinity;
     let high = -Infinity;
@@ -267,6 +292,7 @@ export class SvgFigureRenderer extends FigureRenderer {
     if (!Number.isFinite(low)) { low = 0; high = 1; }
     const pad = (high - low) * 0.12;
     const y = new LinearScale([high + pad, low - pad], [top, top + height]);
+    const color = (token) => COLOR_TOKENS[token] ?? token;
 
     groups.grid.appendChild(svg('rect', {
       x: left, y: top, width: right - left, height, class: 'fg-pane'
@@ -294,14 +320,16 @@ export class SvgFigureRenderer extends FigureRenderer {
     });
 
     if (pane.histogram) {
-      const zero = y.map(0);
+      const signed = pane.histogram.signed !== false;
+      const baseline = y.map(signed ? (pane.histogram.baseline ?? 0) : low - pad);
       pane.histogram.values.forEach((v, i) => {
         if (v == null) return;
         const py = y.map(v);
         groups.candle.appendChild(svg('rect', {
-          x: x(i) - barWidth / 2, y: Math.min(py, zero), width: barWidth,
-          height: Math.max(1, Math.abs(py - zero)),
-          class: `fg-hist ${v >= 0 ? 'fg-up' : 'fg-down'}`
+          x: x(i) - barWidth / 2, y: Math.min(py, baseline), width: barWidth,
+          height: Math.max(1, Math.abs(py - baseline)),
+          class: signed ? `fg-hist ${v >= 0 ? 'fg-up' : 'fg-down'}` : 'fg-hist',
+          style: signed ? null : `fill:${color(pane.histogram.color)}`
         }));
       });
     }
@@ -333,6 +361,17 @@ export class SvgFigureRenderer extends FigureRenderer {
     if (pane.title) {
       groups.text.appendChild(text(pane.title, { x: left + 5, y: top + 13, class: 'fg-panetitle' }));
     }
+
+    // 名前の付いた線だけ、タイトルの右に凡例として並べる
+    let cursor = left + 5 + (pane.title ? approximateTextWidth(pane.title) + 16 : 0);
+    (pane.lines ?? []).filter((l) => l.label).forEach((item) => {
+      groups.line.appendChild(svg('line', {
+        x1: cursor, y1: top + 9.5, x2: cursor + 13, y2: top + 9.5, class: 'fg-plot',
+        style: `stroke:${color(item.color)}${item.dash ? `;stroke-dasharray:${item.dash}` : ''}`
+      }));
+      groups.text.appendChild(text(item.label, { x: cursor + 18, y: top + 13, class: 'fg-legend' }));
+      cursor += 18 + approximateTextWidth(item.label) + 14;
+    });
   }
 
   /**

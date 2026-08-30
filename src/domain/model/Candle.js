@@ -5,9 +5,9 @@
  * 描画の都合ではない。だから描画側ではなくここに置く。
  */
 export class Candle {
-  #open; #high; #low; #close; #index;
+  #open; #high; #low; #close; #index; #volume;
 
-  constructor({ open, high, low, close, index = 0 }) {
+  constructor({ open, high, low, close, index = 0, volume = null }) {
     // 不変条件: 高値は始値・終値・安値のどれよりも低くならない。
     // 壊れたデータを黙って直すとチャートが「それらしく」表示されてしまい、
     // 供給側の壊れに気づけなくなる。ここでは落とす。
@@ -17,8 +17,14 @@ export class Candle {
     if (high < Math.max(open, close) || low > Math.min(open, close) || high < low) {
       throw new RangeError(`Candle[${index}]: OHLC の大小関係が壊れている`);
     }
+    if (volume != null && !(volume >= 0)) {
+      throw new RangeError(`Candle[${index}]: volume は 0 以上`);
+    }
     this.#open = open; this.#high = high; this.#low = low; this.#close = close;
     this.#index = index;
+    // FX に出回る出来高は約定金額ではなく tick volume（値が動いた回数）。
+    // 銘柄をまたいで比べる意味はないので、単位のない相対値として持つ。
+    this.#volume = volume;
     Object.freeze(this);
   }
 
@@ -27,6 +33,7 @@ export class Candle {
   get low() { return this.#low; }
   get close() { return this.#close; }
   get index() { return this.#index; }
+  get volume() { return this.#volume; }
 
   get isBullish() { return this.#close > this.#open; }   // 陽線
   get isBearish() { return this.#close < this.#open; }   // 陰線
@@ -66,7 +73,13 @@ export class Candle {
     return this.bodyTop <= previous.bodyTop && this.bodyBottom >= previous.bodyBottom;
   }
 
+  /** 高値・安値・終値の平均。VWAP や CCI が基準にする代表値。 */
+  get typicalPrice() { return (this.#high + this.#low + this.#close) / 3; }
+
   withIndex(index) {
-    return new Candle({ open: this.#open, high: this.#high, low: this.#low, close: this.#close, index });
+    return new Candle({
+      open: this.#open, high: this.#high, low: this.#low, close: this.#close,
+      index, volume: this.#volume
+    });
   }
 }

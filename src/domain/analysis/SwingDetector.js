@@ -39,8 +39,16 @@ export const SwingDetector = {
   },
 
   /**
-   * ダイバージェンス: 価格の高値／安値の更新に対して、
-   * オシレータが同じ方向へ更新できていない状態。
+   * ダイバージェンス: 価格とオシレーターの食い違い。
+   *
+   * 4 種類ある。通常（reversal）は「更新したのに勢いが伴わない」で反転側、
+   * 隠れ（hidden）は「押し目で価格は耐えたのに指標だけ深く落ちた」で継続側。
+   * 隠れのほうは、上昇トレンドの押し目・下降トレンドの戻りでしか意味を持たない。
+   *
+   *   通常・弱気  価格 高値切り上げ / 指標 切り下げ
+   *   通常・強気  価格 安値切り下げ / 指標 切り上げ
+   *   隠れ・強気  価格 安値切り上げ / 指標 切り下げ
+   *   隠れ・弱気  価格 高値切り下げ / 指標 切り上げ
    */
   divergences(series, indicator, { lookback = 2 } = {}) {
     const swings = SwingDetector.detect(series, { lookback });
@@ -51,11 +59,13 @@ export const SwingDetector = {
         const a = points[i - 1], b = points[i];
         const ia = indicator.at(a.index), ib = indicator.at(b.index);
         if (ia == null || ib == null) continue;
-        if (kind === 'high' && b.price > a.price && ib < ia) {
-          out.push({ kind: 'bearish', from: a, to: b, indicatorFrom: ia, indicatorTo: ib });
-        }
-        if (kind === 'low' && b.price < a.price && ib > ia) {
-          out.push({ kind: 'bullish', from: a, to: b, indicatorFrom: ia, indicatorTo: ib });
+        const entry = { from: a, to: b, indicatorFrom: ia, indicatorTo: ib };
+        if (kind === 'high') {
+          if (b.price > a.price && ib < ia) out.push({ ...entry, kind: 'bearish', hidden: false });
+          if (b.price < a.price && ib > ia) out.push({ ...entry, kind: 'bearish', hidden: true });
+        } else {
+          if (b.price < a.price && ib > ia) out.push({ ...entry, kind: 'bullish', hidden: false });
+          if (b.price > a.price && ib < ia) out.push({ ...entry, kind: 'bullish', hidden: true });
         }
       }
     });

@@ -8,10 +8,11 @@
 export class FigureSpec {
   constructor({
     id, title, caption, series = null, height = 240, yPad = 0.1,
-    axis = true, digits = null, layers = [], panes = [], xCount = null
+    axis = true, digits = null, layers = [], panes = [], xCount = null,
+    priceStyle = 'candle'
   }) {
     Object.assign(this, {
-      id, title, caption, series, height, yPad, axis, digits, layers, panes, xCount
+      id, title, caption, series, height, yPad, axis, digits, layers, panes, xCount, priceStyle
     });
     Object.freeze(this);
   }
@@ -36,12 +37,21 @@ export class FigureSpecBuilder {
   /** ローソク足の本体。1 図につき 1 つ。 */
   candles(series) { this.#spec.series = series; return this; }
 
-  /** 指標の折れ線。IndicatorSeries でも素の配列でも受ける。 */
-  line(source, { color = 'accent', label = null, dash = null, width = null } = {}) {
-    this.#spec.layers.push({
-      type: 'line', values: valuesOf(source),
-      label: label ?? source?.name ?? null, color, dash, width
-    });
+  /**
+   * 価格の描き方。'candle'（既定）/ 'bar'（バーチャート）/ 'line'（終値の折れ線）。
+   * 同じデータでも情報量が変わることを見せるために切り替えられるようにしている。
+   */
+  priceStyle(style) { this.#spec.priceStyle = style; return this; }
+
+  /**
+   * 指標の折れ線。IndicatorSeries でも素の配列でも受ける。
+   * label を省くと系列名が凡例に出る。バンドの下側のように名前が要らない線は
+   * label: null を明示して凡例から外す。
+   */
+  line(source, options = {}) {
+    const { color = 'accent', dash = null, width = null } = options;
+    const label = 'label' in options ? options.label : (source?.name ?? null);
+    this.#spec.layers.push({ type: 'line', values: valuesOf(source), label, color, dash, width });
     return this;
   }
 
@@ -110,12 +120,20 @@ class PaneBuilder {
   height(px) { this.#pane.height = px; return this; }
   range(min, max) { this.#pane.min = min; this.#pane.max = max; return this; }
 
+  /**
+   * ペイン内の線。label を明示したときだけ凡例に出す
+   * （1 本しかないペインではタイトルと同じ名前が並んで冗長になるため）。
+   */
   line(source, { color = 'accent', dash = null, label = null } = {}) {
-    this.#pane.lines.push({ values: valuesOf(source), color, dash, label: label ?? source?.name ?? null });
+    this.#pane.lines.push({ values: valuesOf(source), color, dash, label });
     return this;
   }
-  histogram(source, { color = 'accent' } = {}) {
-    this.#pane.histogram = { values: valuesOf(source), color };
+  /**
+   * @param {object} options.signed true なら値の正負で色を分ける（MACD）。
+   *   false なら単色（出来高のように常に正の量）。
+   */
+  histogram(source, { color = 'accent', signed = true, baseline = 0 } = {}) {
+    this.#pane.histogram = { values: valuesOf(source), color, signed, baseline };
     return this;
   }
   level(y, { label = null, color = 'level', dash = '4 3' } = {}) {

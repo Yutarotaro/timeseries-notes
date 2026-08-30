@@ -13,8 +13,8 @@ export const ichimokuFigures = {
       .height(280)
       .xCount(series.length + cloud.displacement)
       .band(cloud.spanA, cloud.spanB, { fill: 'accent3', opacity: 0.16 })
-      .line(cloud.spanA, { color: 'accent3', dash: '3 3' })
-      .line(cloud.spanB, { color: 'accent3', dash: '3 3' })
+      .line(cloud.spanA, { color: 'accent3', dash: '3 3', label: '雲（先行スパン）' })
+      .line(cloud.spanB, { color: 'accent3', dash: '3 3', label: null })
       .line(cloud.tenkan, { color: 'accent', label: '転換線' })
       .line(cloud.kijun, { color: 'warn', label: '基準線' })
       .line(cloud.chikou, { color: 'muted', label: '遅行スパン' });
